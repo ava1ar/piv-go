@@ -105,44 +105,6 @@ func TestNewYubiKey(t *testing.T) {
 	defer close()
 }
 
-func TestMultipleConnections(t *testing.T) {
-	cards, err := Cards()
-	if err != nil {
-		t.Fatalf("listing cards: %v", err)
-	}
-	for _, card := range cards {
-		if !strings.Contains(strings.ToLower(card), "yubikey") {
-			continue
-		}
-		if !canModifyYubiKey {
-			t.Skip("not running test that accesses yubikey, provide --wipe-yubikey flag")
-		}
-		yk, err := Open(card)
-		if err != nil {
-			t.Fatalf("getting new yubikey: %v", err)
-		}
-		defer func() {
-			if err := yk.Close(); err != nil {
-				t.Errorf("closing yubikey: %v", err)
-			}
-		}()
-
-		_, oerr := Open(card)
-		if oerr == nil {
-			t.Fatalf("expected second open operation to fail")
-		}
-		var e *scErr
-		if !errors.As(oerr, &e) {
-			t.Fatalf("expected scErr, got %v", oerr)
-		}
-		if e.rc != 0x8010000B {
-			t.Fatalf("expected return code 0x8010000B, got 0x%x", e.rc)
-		}
-		return
-	}
-	t.Skip("no yubikeys detected, skipping")
-}
-
 func TestYubiKeySerial(t *testing.T) {
 	yk, close := newTestYubiKey(t)
 	defer close()
